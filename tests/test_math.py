@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from tiny_vec import Value, MLP
+from tiny_vec import Value, MLP, svd, power_iteration, pca
 
 
 def test_engine_matches_numeric_gradient():
@@ -40,3 +40,33 @@ def test_mlp_shapes_and_zero_grad():
     assert any(p.grad != 0.0 for p in model.parameters())
     model.zero_grad()
     assert all(p.grad == 0.0 for p in model.parameters())
+
+
+def test_power_iteration_finds_dominant_eigenpair():
+    M = [[2.0, 0.0], [0.0, 1.0]]
+    lam, v = power_iteration(M)
+    assert math.isclose(lam, 2.0, abs_tol=1e-6)
+
+
+def test_singular_values_match_numpy():
+    rng = np.random.default_rng(2)
+    A = rng.standard_normal((5, 3))
+    _, S, _ = svd(A.tolist())
+    s_np = np.linalg.svd(A, compute_uv=False)
+    assert np.allclose(sorted(S, reverse=True), s_np, atol=1e-4)
+
+
+def test_svd_reconstructs_matrix():
+    rng = np.random.default_rng(3)
+    A = rng.standard_normal((6, 4))
+    U, S, Vt = svd(A.tolist())
+    assert np.allclose(np.array(U) @ np.diag(S) @ np.array(Vt), A, atol=1e-4)
+
+
+def test_pca_matches_sklearn_up_to_sign():
+    from sklearn.datasets import load_iris
+    from sklearn.decomposition import PCA
+    X = load_iris().data
+    scores, _, _ = pca(X.tolist(), n_components=2)
+    sk = PCA(n_components=2).fit_transform(X)
+    assert np.allclose(np.abs(scores), np.abs(sk), atol=1e-4)
