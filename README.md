@@ -105,6 +105,17 @@ TOTAL                    333     25    92%
 15 passed
 ```
 
+## Build & publish (TestPyPI)
+
+```bash
+pip install build twine
+python -m build                                  # -> dist/*.whl, dist/*.tar.gz
+twine upload --repository testpypi dist/*        # needs a TestPyPI API token
+python -m venv /tmp/fresh && source /tmp/fresh/bin/activate
+pip install -i https://test.pypi.org/simple/ tiny-vec
+python -c 'from tiny_vec import Value; v=Value(2); (v*v).backward(); print(v.grad)'  # 4.0
+```
+
 ## Layout
 
 ```
